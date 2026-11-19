@@ -64,6 +64,7 @@ class MainActivity : Activity() {
 
     /** Canción compartida desde WhatsApp, Archivos, etc. */
     private fun handleShare(i: Intent?) {
+        if (i?.action == Intent.ACTION_VIEW) { i.data?.let { importUri(it) }; return }
         if (i?.action != Intent.ACTION_SEND) return
         @Suppress("DEPRECATION")
         val uri = (if (Build.VERSION.SDK_INT >= 33) i.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
@@ -91,10 +92,18 @@ class MainActivity : Activity() {
                 }
                 val ext = name.substringAfterLast('.', "audio").lowercase().take(5)
                 val title = name.substringBeforeLast('.').replace('_', ' ').trim().ifEmpty { "Canción" }
+                val tmp = File(cacheDir, "entrada.$ext")
+                contentResolver.openInputStream(uri)!!.use { inp -> tmp.outputStream().use { inp.copyTo(it, 1 shl 16) } }
+                if (Paquete.looksLikeZip(tmp)) {
+                    // Paquete de ensayo ya separado (por ejemplo, mandado por WhatsApp)
+                    val meta = try { Paquete.import(this, tmp) } finally { tmp.delete() }
+                    js("window.onPicked && window.onPicked(${meta})")
+                    return@Thread
+                }
                 val id = System.currentTimeMillis().toString(36)
                 val dir = Songs.dir(this, id).apply { mkdirs() }
-                contentResolver.openInputStream(uri)!!.use { inp ->
-                    File(dir, "original.$ext").outputStream().use { inp.copyTo(it, 1 shl 16) }
+                if (!tmp.renameTo(File(dir, "original.$ext"))) {
+                    tmp.copyTo(File(dir, "original.$ext"), true); tmp.delete()
                 }
                 val meta = JSONObject().put("id", id).put("name", title)
                     .put("created", System.currentTimeMillis()).put("state", "nueva")
@@ -130,7 +139,7 @@ class MainActivity : Activity() {
         @JavascriptInterface fun pick() = main.post {
             val i = Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
                 .setType("*/*")
-                .putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("audio/*", "video/mp4", "application/ogg"))
+                .putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("audio/*", "video/mp4", "application/ogg", "application/zip"))
             @Suppress("DEPRECATION")
             startActivityForResult(i, 11)
         }
@@ -162,6 +171,28 @@ class MainActivity : Activity() {
         }
 
         @JavascriptInterface fun cancel() { SeparationService.cancel = true }
+
+        /** Arma el paquete de ensayo y abre "Compartir" (WhatsApp, etc.). */
+        @JavascriptInterface fun share(id: String) {
+            Thread {
+                try {
+                    var last = 0L
+                    val zip = Paquete.export(this@MainActivity, id) { p ->
+                        val now = System.currentTimeMillis()
+                        if (now - last > 300) { last = now; js("window.onShareProgress && window.onShareProgress(${p})") }
+                    }
+                    val uri = androidx.core.content.FileProvider.getUriForFile(this@MainActivity, "$packageName.archivos", zip)
+                    val send = Intent(Intent.ACTION_SEND).setType("application/zip")
+                        .putExtra(Intent.EXTRA_STREAM, uri)
+                        .putExtra(Intent.EXTRA_TEXT, "Paquete de ensayo: abrilo con Ensayo de Voces")
+                        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    main.post { startActivity(Intent.createChooser(send, "Mandar paquete de ensayo")) }
+                    js("window.onShareProgress && window.onShareProgress(-1)")
+                } catch (e: Exception) {
+                    js("window.onShareProgress && window.onShareProgress(-2, ${JSONObject.quote(e.message ?: "No se pudo armar el paquete")})")
+                }
+            }.start()
+        }
 
         @JavascriptInterface fun rename(id: String, name: String) {
             val m = Songs.meta(this@MainActivity, id) ?: return

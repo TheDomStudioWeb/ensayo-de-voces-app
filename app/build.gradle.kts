@@ -42,5 +42,6 @@ android {
 
 dependencies {
     implementation(libs.androidx.webkit)
+    implementation(libs.androidx.core)
     implementation(libs.onnxruntime.android)
 }

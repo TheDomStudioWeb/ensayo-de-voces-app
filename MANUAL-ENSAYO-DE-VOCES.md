@@ -22,6 +22,16 @@ Ensayo de Voces es una app para el teléfono que toma cualquier canción y la se
 4. **Ensayar**: en el reproductor cada pista tiene su interruptor (prender/apagar), su volumen y el botón SOLO (escuchar solo esa pista). Abajo: reproducir/pausa, −10 / +10 segundos, la barra para ir a cualquier parte, y A / B para repetir un tramo (A marca el inicio, B el final, ✕ quita la repetición).
 5. **Intercambiar voz principal y coros**: el motor decide cuál es la "principal" por cómo suena, y a veces se equivoca (por ejemplo en murga, donde la línea principal la canta un grupo). El botón «⇅ Intercambiar» corrige los nombres sin volver a separar.
 
+## Mandar una canción a otro teléfono (modo Belén)
+Separar lleva tiempo y batería, así que lo hace un solo teléfono (el de Daniel). Para que otra persona ensaye sin procesar nada:
+1. En el reproductor de una canción ya separada, tocar «Mandar paquete de ensayo (WhatsApp)». La app arma un paquete (.zip) con las pistas comprimidas (unos 5 MB por pista) y abre «Compartir».
+2. Elegir WhatsApp y el contacto.
+3. La otra persona necesita tener instalada la misma app (EnsayoDeVoces.apk). En WhatsApp toca el archivo y elige abrirlo con «Ensayo de Voces» (o lo comparte con la app). La canción aparece en su lista como «recibida», lista para escuchar, con las mismas pistas, interruptores, SOLO y repetición A-B.
+Las canciones recibidas no se pueden volver a separar (no traen el audio original), pero sí borrar.
+
+## Borrar canciones
+El botón «Borrar canción» está en la pantalla de opciones (antes de separar) y abajo de todo en el reproductor. Borra la canción y todas sus pistas.
+
 ## La primera vez
 La primera separación baja el "motor" (modelo de inteligencia artificial): unos 65 MB para voces y música, y otros 50 MB si se pide separar los coros. Conviene estar con Wi-Fi. Después ya no hace falta internet.
 
@@ -44,4 +54,4 @@ Depende del largo de la canción y de la calidad elegida. Mientras procesa, la a
 1. ~~Voces y música en el teléfono~~ (hecho)
 2. ~~Voz principal y coros~~ (incluido, a probar)
 3. Letra sincronizada (transcripción automática).
-4. Modo Belén: recibir por WhatsApp un paquete ya separado y solo reproducirlo; guía de notas; voz femenina / masculina por separado.
+4. ~~Modo Belén: recibir por WhatsApp un paquete ya separado y solo reproducirlo~~ (hecho). Pendiente: guía de notas; voz femenina / masculina por separado.

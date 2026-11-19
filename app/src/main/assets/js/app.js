@@ -29,7 +29,7 @@
     const st = J(A.status()) || {};
     const list = $('#list');
     if (!songs.length) {
-      list.innerHTML = '<div class="empty">Todavía no hay canciones.<br>Tocá <b>Agregar canción</b> o compartí un audio desde WhatsApp con esta app.</div>';
+      list.innerHTML = '<div class="empty">Todavía no hay canciones.<br>Tocá <b>Agregar canción</b>, o abrí desde WhatsApp un <b>paquete de ensayo</b> que te hayan mandado (se escucha directo, sin separar).</div>';
       return;
     }
     list.innerHTML = songs.map((s) => {
@@ -38,6 +38,7 @@
       const parts = [];
       if (s.seconds) parts.push(fmt(s.seconds));
       if (state === 'lista') parts.push(s.coro ? 'principal · coros · música' : 'voces · música');
+      if (s.received) parts.push('recibida');
       if (state === 'lista' && s.procSeconds) parts.push('separada en ' + fmt(s.procSeconds) + (s.motor ? ' (' + (MOTOR[s.motor] || s.motor) + (s.hq ? ', calidad alta' : '') + ')' : ''));
       if (state === 'procesando' && st.total != null) parts.push(Math.round(st.total * 100) + '%');
       return `<button class="card" data-id="${s.id}"><div class="info"><div class="name">${esc(s.name)}</div>
@@ -92,10 +93,13 @@
   document.querySelectorAll('#motor button').forEach((b) => b.onclick = () => {
     motor = b.dataset.m; try { localStorage.setItem('motor', motor); } catch (e) {} paintOpts(); });
   $('#go').onclick = () => { A.separate(current.id, mode === 'coro', hq, motor); showProc(); };
-  $('#del').onclick = () => {
+  function delSong() {
     if (!confirm('¿Borrar "' + current.name + '" y sus pistas?')) return;
+    if (view === 'play') { stopAll(); buffers = []; }
     A.delete(current.id); current = null; renderLib(); show('lib');
-  };
+  }
+  $('#del').onclick = delSong;
+  $('#del2').onclick = delSong;
 
   // ---------- Procesando ----------
   function showProc() {
@@ -134,6 +138,8 @@
     $('#y-name').textContent = current.name;
     $('#tracks').innerHTML = ''; $('#transport').classList.add('hidden');
     $('#swap').classList.toggle('hidden', !current.coro);
+    $('#redo').classList.toggle('hidden', !!current.received);
+    $('#share').textContent = 'Mandar paquete de ensayo (WhatsApp)';
     $('#y-loading').classList.remove('hidden'); $('#y-loading').textContent = 'Cargando pistas…';
     show('play');
     if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
@@ -233,6 +239,13 @@
   $('#loopX').onclick = () => { loopA = loopB = null; paintLoop(); };
 
   $('#redo').onclick = () => { stopAll(); showOpts(); };
+  let sharing = false;
+  $('#share').onclick = () => { if (sharing) return; sharing = true; $('#share').textContent = 'Armando el paquete…'; A.share(current.id); };
+  window.onShareProgress = (p, err) => {
+    if (p >= 0) { $('#share').textContent = 'Armando el paquete… ' + Math.round(p * 100) + '%'; return; }
+    sharing = false; $('#share').textContent = 'Mandar paquete de ensayo (WhatsApp)';
+    if (p === -2) alert(err);
+  };
   // Intercambia los nombres sin volver a cargar el audio
   $('#swap').onclick = () => {
     const m = J(A.swapVoices(current.id)); if (!m || !m.stems) return;
@@ -265,7 +278,7 @@
     return {
       songs: () => JSON.stringify(songs), song: (id) => JSON.stringify(songs.find((s) => s.id === id) || null),
       status: () => '{"running":false}', models: () => '{"voces":false,"coro":false}', swapVoices: () => 'null',
-      pick() {}, separate() {}, cancel() {}, delete() {}, rename() {},
+      pick() {}, share() {}, separate() {}, cancel() {}, delete() {}, rename() {},
     };
   }
 })();
