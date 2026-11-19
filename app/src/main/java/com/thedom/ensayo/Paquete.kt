@@ -45,6 +45,16 @@ object Paquete {
             val info = JSONObject().put("app", "ensayo-de-voces").put("version", 1)
                 .put("name", meta.optString("name")).put("seconds", meta.optInt("seconds"))
                 .put("coro", meta.optBoolean("coro")).put("modo", meta.optString("modo", if (meta.optBoolean("coro")) "coro" else "voces")).put("stems", pkStems)
+            val pitch = File(dir, "pitch.json")
+            if (pitch.exists()) {
+                // el gráfico se refiere a las pistas por nombre de archivo: pasarlo a .m4a
+                val pj = JSONObject(pitch.readText())
+                val vs = pj.optJSONArray("voces")
+                if (vs != null) for (i in 0 until vs.length()) {
+                    val v = vs.getJSONObject(i); v.put("file", v.getString("file").substringBeforeLast('.') + ".m4a")
+                }
+                zip.putNextEntry(ZipEntry("pitch.json")); zip.write(pj.toString().toByteArray()); zip.closeEntry()
+            }
             zip.putNextEntry(ZipEntry("ensayo.json"))
             zip.write(info.toString().toByteArray())
             zip.closeEntry()
@@ -69,7 +79,7 @@ object Paquete {
                     val name = File(e.name).name // sin carpetas (seguridad)
                     if (e.isDirectory || name.isEmpty()) continue
                     if (name == "ensayo.json") info = JSONObject(zin.readBytes().toString(Charsets.UTF_8))
-                    else if (name.endsWith(".m4a")) File(dir, name).outputStream().use { zin.copyTo(it) }
+                    else if (name.endsWith(".m4a") || name == "pitch.json") File(dir, name).outputStream().use { zin.copyTo(it) }
                 }
             }
             val inf = info ?: throw Exception("Ese archivo no es un paquete de Ensayo de Voces")

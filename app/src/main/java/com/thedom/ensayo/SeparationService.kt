@@ -188,6 +188,11 @@ class SeparationService : Service() {
                 stems.put(JSONObject().put("file", "voces.wav").put("label", "Voces"))
             }
 
+            meta.put("stems", stems)
+            Songs.save(this, meta)
+            report(id, "Armando el gráfico de notas", 0f, 0.99f, t0)
+            try { Notas.build(this, id) { p -> report(id, "Armando el gráfico de notas", p, 0.99f, t0) } } catch (_: Throwable) { }
+
             val secs = ((System.currentTimeMillis() - t0) / 1000).toInt()
             meta.put("state", "lista").put("stems", stems).put("procSeconds", secs).put("motor", used).put("swapped", false)
             Songs.save(this, meta)

@@ -7,70 +7,120 @@
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z" fill="currentColor"/><path d="M6.5 11.5a5.5 5.5 0 0 0 11 0M12 17v3.5M9 20.5h6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" fill="currentColor"/></symbol>
+  <symbol id="i-back10" viewBox="0 0 24 24"><path d="M11 6 5 12l6 6M19 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-fwd10" viewBox="0 0 24 24"><path d="m13 6 6 6-6 6M5 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 12 20 4l-4 16-4-7z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+  <symbol id="i-swap" viewBox="0 0 24 24"><path d="M7 4v14m0 0-3-3m3 3 3-3M17 20V6m0 0-3 3m3-3 3 3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-redo" viewBox="0 0 24 24"><path d="M19 8a8 8 0 1 0 1 6M19 3v5h-5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V4.5h4V7M7 7l1 13h8l1-13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-tone" viewBox="0 0 24 24"><path d="M4 14c2.5-6 5-6 8 0s5.5 6 8 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+</svg>
+
 <main>
   <!-- Biblioteca -->
   <section id="v-lib">
-    <h1>Ensayo de Voces</h1>
-    <p class="sub">Separá cualquier canción y ensayá tu parte.</p>
-    <button class="btn gold" id="add">＋ Agregar canción</button>
+    <header class="brand">
+      <span class="seal"><svg><use href="#i-mic"/></svg></span>
+      <div><h1>Ensayo de Voces</h1><p>Estudio de práctica</p></div>
+    </header>
+    <div class="hero">
+      <div class="hero-t"><span class="eyebrow">Tu repertorio</span><b id="count">0 canciones</b></div>
+      <button class="btn gold" id="add"><svg><use href="#i-plus"/></svg><span>Agregar canción</span></button>
+    </div>
     <div class="list" id="list"></div>
   </section>
 
   <!-- Opciones de separación -->
   <section id="v-opts" class="hidden">
-    <div class="top"><button class="back" data-back>‹</button><h2 id="o-name"></h2></div>
+    <div class="top"><button class="back" data-back aria-label="Volver"><svg><use href="#i-chev"/></svg></button><div class="tt"><span class="eyebrow">Separar</span><h2 id="o-name"></h2></div></div>
     <div class="panel">
-      <b>¿Qué querés separar?</b>
+      <span class="eyebrow">¿Qué querés separar?</span>
       <button class="opt on" data-mode="voces"><i class="dot"></i><div><b>Voces y música</b><span>Dos pistas: todas las voces juntas y la música sola.</span></div></button>
-      <button class="opt" data-mode="coro"><i class="dot"></i><div><b>Voz principal, coros y música</b><span>Tres pistas. Tarda más: separa primero las voces y después la principal de los coros.</span></div></button>
-      <button class="opt" data-mode="fm"><i class="dot"></i><div><b>Voz femenina, voz masculina y música</b><span>Para dúos de hombre y mujer. Es la más lenta (puede llevar más de media hora): conviene dejarla separando en segundo plano.</span></div></button>
-      <div class="switch"><div class="txt"><b>Calidad alta</b><span>Hace dos pasadas y promedia: más limpio, tarda el doble.</span></div><button class="tog on" id="hq"></button></div>
-      <div style="margin-top:18px"><b>Motor</b></div>
+      <button class="opt" data-mode="coro"><i class="dot"></i><div><b>Voz principal, coros y música</b><span>Tres pistas. Separa primero las voces y después la principal de los coros.</span></div></button>
+      <button class="opt" data-mode="fm"><i class="dot"></i><div><b>Voz femenina, voz masculina y música</b><span>Para dúos de hombre y mujer. La más lenta: conviene dejarla en segundo plano.</span></div></button>
+    </div>
+    <div class="panel">
+      <div class="switch"><div class="txt"><b>Calidad alta</b><span>Dos pasadas y promedio: más limpio, tarda el doble.</span></div><button class="tog on" id="hq" aria-label="Calidad alta"></button></div>
+      <div class="sep"></div>
+      <span class="eyebrow">Motor</span>
       <div class="seg" id="motor">
         <button data-m="xnnpack">Acelerado</button><button data-m="nnapi">Chip de IA</button><button data-m="cpu">Básico</button>
       </div>
       <p class="note" id="m-note"></p>
-      <p class="note" id="o-note"></p>
-      <button class="btn gold" id="go">Separar</button>
     </div>
-    <button class="btn danger" id="del" style="margin-top:14px">Borrar canción</button>
+    <p class="note warn" id="o-note"></p>
+    <button class="btn gold" id="go">Separar</button>
+    <button class="btn ghost danger" id="del"><svg><use href="#i-trash"/></svg><span>Borrar canción</span></button>
   </section>
 
   <!-- Procesando -->
   <section id="v-proc" class="hidden">
-    <div class="top"><button class="back" data-back>‹</button><h2 id="p-name"></h2></div>
-    <div class="panel">
+    <div class="top"><button class="back" data-back aria-label="Volver"><svg><use href="#i-chev"/></svg></button><div class="tt"><span class="eyebrow">Separando</span><h2 id="p-name"></h2></div></div>
+    <div class="panel proc">
+      <div class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="pct" id="p-pct">0%</div>
       <div class="stage" id="p-stage">Preparando…</div>
       <div class="bar"><i id="p-bar"></i></div>
       <div class="times"><span id="p-el"></span><span id="p-eta"></span></div>
-      <p class="note">Podés salir de la app o apagar la pantalla: sigue separando y te avisa con una notificación cuando termina.</p>
-      <button class="btn line" id="cancel">Cancelar</button>
     </div>
+    <p class="note">Podés salir de la app o apagar la pantalla: sigue separando y te avisa con una notificación cuando termina.</p>
+    <button class="btn ghost" id="cancel">Cancelar</button>
   </section>
 
   <!-- Reproductor -->
   <section id="v-play" class="hidden">
-    <div class="top"><button class="back" data-back>‹</button><h2 id="y-name"></h2></div>
+    <div class="top"><button class="back" data-back aria-label="Volver"><svg><use href="#i-chev"/></svg></button><div class="tt"><span class="eyebrow" id="y-mode"></span><h2 id="y-name"></h2></div></div>
     <div class="loading" id="y-loading">Cargando pistas…</div>
-    <div class="tracks" id="tracks"></div>
-    <div class="transport hidden" id="transport">
-      <input type="range" id="seek" min="0" max="1000" value="0">
-      <div class="pos"><span id="cur">0:00</span><span id="dur">0:00</span></div>
-      <div class="ctrl">
-        <button id="rw">−10</button>
-        <button class="play" id="play">▶</button>
-        <button id="ff">+10</button>
+
+    <div id="y-body" class="hidden">
+      <!-- Guía de notas -->
+      <div class="panel guide" id="guide">
+        <div class="ghead"><span class="eyebrow">Guía de notas</span>
+          <button class="chip" id="tone"><svg><use href="#i-tone"/></svg>Tono guía</button></div>
+        <div class="vsel" id="vsel"></div>
+        <div class="now">
+          <div><small>Ahora</small><b id="n-cur">—</b></div>
+          <div><small id="n-nxt-l">Próxima</small><b id="n-nxt">—</b></div>
+          <div id="n-oth-box"><small id="n-oth-l">Otra voz</small><b id="n-oth">—</b></div>
+        </div>
+        <canvas id="roll" aria-label="Notas de las voces en el tiempo"></canvas>
+        <canvas id="overview" aria-label="Mapa de la canción: tocá para saltar"></canvas>
+        <p class="note small" id="g-note">Deslizá el gráfico para moverte. Tocá el mapa de abajo para saltar a cualquier parte.</p>
       </div>
-      <div class="ctrl" style="margin-top:12px">
-        <button class="loop" id="loopA" title="Marcar inicio">A</button>
-        <button class="loop" id="loopB" title="Marcar fin">B</button>
-        <button class="loop" id="loopX" title="Quitar repetición">✕</button>
+
+      <!-- Mezcla -->
+      <div class="panel">
+        <span class="eyebrow">Pistas</span>
+        <div class="tracks" id="tracks"></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn gold" id="share"><svg><use href="#i-send"/></svg><span id="shareTxt">Mandar paquete de ensayo</span></button>
+        <button class="btn ghost hidden" id="swap"><svg><use href="#i-swap"/></svg><span id="swapTxt">Intercambiar voces</span></button>
+        <button class="btn ghost" id="redo"><svg><use href="#i-redo"/></svg><span>Volver a separar</span></button>
+        <button class="btn ghost danger" id="del2"><svg><use href="#i-trash"/></svg><span>Borrar canción</span></button>
+      </div>
+
+      <!-- Transporte -->
+      <div class="transport" id="transport">
+        <input type="range" id="seek" min="0" max="1000" value="0" aria-label="Posición">
+        <div class="pos"><span id="cur">0:00</span><span id="dur">0:00</span></div>
+        <div class="ctrl">
+          <button class="loop" id="loopA" aria-label="Marcar inicio">A</button>
+          <button id="rw" aria-label="Atrás 10 segundos"><svg><use href="#i-back10"/></svg></button>
+          <button class="play" id="play" aria-label="Reproducir"><svg><use href="#i-play"/></svg></button>
+          <button id="ff" aria-label="Adelante 10 segundos"><svg><use href="#i-fwd10"/></svg></button>
+          <button class="loop" id="loopB" aria-label="Marcar fin">B</button>
+        </div>
+        <button class="loopx hidden" id="loopX">Quitar repetición</button>
       </div>
     </div>
-    <button class="btn gold" id="share" style="margin-top:14px">Mandar paquete de ensayo (WhatsApp)</button>
-    <button class="btn line hidden" id="swap" style="margin-top:10px"><span id="swapTxt">⇅ Intercambiar voz principal y coros</span></button>
-    <button class="btn line" id="redo" style="margin-top:10px">Volver a separar</button>
-    <button class="btn danger" id="del2" style="margin-top:10px">Borrar canción</button>
   </section>
 </main>
 <footer>Desarrollado por <b>The DOM Studio Web</b><br>WhatsApp 261-3431216 · thedomstudioweb@gmail.com</footer>

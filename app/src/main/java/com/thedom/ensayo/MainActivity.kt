@@ -173,6 +173,24 @@ class MainActivity : Activity() {
 
         @JavascriptInterface fun cancel() { SeparationService.cancel = true }
 
+        /** Gráfico tonal ya calculado, o "null". */
+        @JavascriptInterface fun pitch(id: String): String {
+            val f = Notas.file(this@MainActivity, id)
+            return if (f.exists()) f.readText() else "null"
+        }
+
+        /** Calcula el gráfico tonal de una canción separada antes de esta versión (o recibida sin él). */
+        @JavascriptInterface fun analyze(id: String) {
+            Thread {
+                try {
+                    Notas.build(this@MainActivity, id) { p -> js("window.onPitchProgress && window.onPitchProgress(${JSONObject.quote(id)}, $p)") }
+                    js("window.onPitchReady && window.onPitchReady(${JSONObject.quote(id)})")
+                } catch (e: Throwable) {
+                    js("window.onPitchReady && window.onPitchReady(${JSONObject.quote(id)}, ${JSONObject.quote(e.message ?: "error")})")
+                }
+            }.start()
+        }
+
         /** Arma el paquete de ensayo y abre "Compartir" (WhatsApp, etc.). */
         @JavascriptInterface fun share(id: String) {
             Thread {
