@@ -24,6 +24,11 @@
       <button class="opt on" data-mode="voces"><i class="dot"></i><div><b>Voces y música</b><span>Dos pistas: todas las voces juntas y la música sola.</span></div></button>
       <button class="opt" data-mode="coro"><i class="dot"></i><div><b>Voz principal, coros y música</b><span>Tres pistas. Tarda más: separa primero las voces y después la principal de los coros.</span></div></button>
       <div class="switch"><div class="txt"><b>Calidad alta</b><span>Hace dos pasadas y promedia: más limpio, tarda el doble.</span></div><button class="tog on" id="hq"></button></div>
+      <div style="margin-top:18px"><b>Motor</b></div>
+      <div class="seg" id="motor">
+        <button data-m="xnnpack">Acelerado</button><button data-m="nnapi">Chip de IA</button><button data-m="cpu">Básico</button>
+      </div>
+      <p class="note" id="m-note"></p>
       <p class="note" id="o-note"></p>
       <button class="btn gold" id="go">Separar</button>
     </div>
@@ -61,7 +66,8 @@
         <button class="loop" id="loopX" title="Quitar repetición">✕</button>
       </div>
     </div>
-    <button class="btn line" id="redo" style="margin-top:14px">Volver a separar</button>
+    <button class="btn line hidden" id="swap" style="margin-top:14px">⇅ Intercambiar voz principal y coros</button>
+    <button class="btn line" id="redo" style="margin-top:10px">Volver a separar</button>
   </section>
 </main>
 <footer>Desarrollado por <b>The DOM Studio Web</b><br>WhatsApp 261-3431216 · thedomstudioweb@gmail.com</footer>

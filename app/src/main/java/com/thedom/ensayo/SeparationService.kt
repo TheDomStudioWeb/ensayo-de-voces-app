@@ -20,17 +20,31 @@ import java.io.File
 import java.nio.FloatBuffer
 
 /** Modelo ONNX corriendo en el procesador del teléfono. */
-class OrtModel(path: String, private val dimF: Int) : Engine.Model, AutoCloseable {
+/**
+ * Modelo ONNX corriendo en el teléfono. motor: "xnnpack" (procesador acelerado),
+ * "nnapi" (chip gráfico / de IA, en 16 bits) o "cpu". Si el motor elegido falla, cae a "cpu".
+ */
+class OrtModel(path: String, dimF: Int, wanted: String) : Engine.Model, AutoCloseable {
     private val env = OrtEnvironment.getEnvironment()
     private val session: OrtSession
     private val inputName: String
     private val shape = longArrayOf(1, 4, dimF.toLong(), Engine.DIM_T.toLong())
+    var motor = wanted
+        private set
 
     init {
-        val opts = OrtSession.SessionOptions()
-        opts.setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT)
-        opts.setIntraOpNumThreads(Runtime.getRuntime().availableProcessors().coerceIn(2, 8))
-        session = env.createSession(path, opts)
+        val cores = Runtime.getRuntime().availableProcessors().coerceIn(2, 8)
+        fun opts(m: String) = OrtSession.SessionOptions().apply {
+            setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT)
+            when (m) {
+                "xnnpack" -> { setIntraOpNumThreads(1); addXnnpack(mapOf("intra_op_num_threads" to cores.toString())) }
+                "nnapi" -> { setIntraOpNumThreads(cores); addNnapi(java.util.EnumSet.of(ai.onnxruntime.providers.NNAPIFlags.USE_FP16)) }
+                else -> setIntraOpNumThreads(cores)
+            }
+        }
+        session = try { env.createSession(path, opts(wanted)) } catch (e: Throwable) {
+            motor = "cpu"; env.createSession(path, opts("cpu"))
+        }
         inputName = session.inputNames.iterator().next()
     }
 
@@ -57,9 +71,9 @@ class SeparationService : Service() {
         private const val CH = "proceso"
         private const val NID = 7
 
-        fun start(ctx: Context, id: String, coro: Boolean, hq: Boolean) {
+        fun start(ctx: Context, id: String, coro: Boolean, hq: Boolean, motor: String) {
             val i = Intent(ctx, SeparationService::class.java)
-                .putExtra("id", id).putExtra("coro", coro).putExtra("hq", hq)
+                .putExtra("id", id).putExtra("coro", coro).putExtra("hq", hq).putExtra("motor", motor)
             if (Build.VERSION.SDK_INT >= 26) ctx.startForegroundService(i) else ctx.startService(i)
         }
     }
@@ -75,8 +89,9 @@ class SeparationService : Service() {
         if (id == null || worker?.isAlive == true) return START_NOT_STICKY
         val coro = intent.getBooleanExtra("coro", false)
         val hq = intent.getBooleanExtra("hq", true)
+        val motor = intent.getStringExtra("motor") ?: "xnnpack"
         cancel = false
-        worker = Thread({ work(id, coro, hq) }, "separacion").apply { start() }
+        worker = Thread({ work(id, coro, hq, motor) }, "separacion").apply { start() }
         return START_NOT_STICKY
     }
 
@@ -85,7 +100,7 @@ class SeparationService : Service() {
         else startForeground(NID, n)
     }
 
-    private fun work(id: String, coro: Boolean, hq: Boolean) {
+    private fun work(id: String, coro: Boolean, hq: Boolean, wanted: String) {
         val wl = (getSystemService(Context.POWER_SERVICE) as PowerManager)
             .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "ensayo:separar")
         wl.acquire(3 * 60 * 60 * 1000L)
@@ -93,7 +108,7 @@ class SeparationService : Service() {
         val meta = Songs.meta(this, id) ?: JSONObject().put("id", id)
         val dir = Songs.dir(this, id)
         try {
-            meta.put("state", "procesando").put("coro", coro).put("hq", hq).remove("error")
+            meta.put("state", "procesando").put("coro", coro).put("hq", hq).put("motor", wanted).remove("error")
             Songs.save(this, meta)
 
             // Pesos de cada etapa en la barra total
@@ -123,7 +138,9 @@ class SeparationService : Service() {
                 }
             }
 
-            OrtModel(Models.file(this, Models.VOCES).absolutePath, Models.VOCES.dimF).use { m ->
+            var used = wanted
+            OrtModel(Models.file(this, Models.VOCES).absolutePath, Models.VOCES.dimF, wanted).use { m ->
+                used = m.motor
                 Engine.WavWriter(File(dir, "voces.wav")).use { a ->
                     Engine.WavWriter(File(dir, "musica.wav")).use { b ->
                         Engine.separate(m, Models.VOCES.nFft, Models.VOCES.dimF, hq,
@@ -137,7 +154,7 @@ class SeparationService : Service() {
             stems.put(JSONObject().put("file", "musica.wav").put("label", "Música"))
             if (coro) {
                 val v = Engine.readWav(File(dir, "voces.wav"))
-                OrtModel(Models.file(this, Models.KARAOKE).absolutePath, Models.KARAOKE.dimF).use { m ->
+                OrtModel(Models.file(this, Models.KARAOKE).absolutePath, Models.KARAOKE.dimF, wanted).use { m ->
                     Engine.WavWriter(File(dir, "principal.wav")).use { a ->
                         Engine.WavWriter(File(dir, "coro.wav")).use { b ->
                             Engine.separate(m, Models.KARAOKE.nFft, Models.KARAOKE.dimF, hq,
@@ -152,7 +169,7 @@ class SeparationService : Service() {
             }
 
             val secs = ((System.currentTimeMillis() - t0) / 1000).toInt()
-            meta.put("state", "lista").put("stems", stems).put("procSeconds", secs)
+            meta.put("state", "lista").put("stems", stems).put("procSeconds", secs).put("motor", used).put("swapped", false)
             Songs.save(this, meta)
             status = JSONObject().put("running", false).put("id", id).put("done", true).put("procSeconds", secs)
             finalNotification("Lista: ${meta.optString("name")}", "Separada en ${secs / 60} min ${secs % 60} s")

@@ -135,9 +135,30 @@ class MainActivity : Activity() {
             startActivityForResult(i, 11)
         }
 
-        @JavascriptInterface fun separate(id: String, coro: Boolean, hq: Boolean) {
+        @JavascriptInterface fun separate(id: String, coro: Boolean, hq: Boolean, motor: String) {
             SeparationService.status = JSONObject().put("running", true).put("id", id).put("stage", "Preparando…").put("progress", 0)
-            SeparationService.start(this@MainActivity, id, coro, hq)
+            SeparationService.start(this@MainActivity, id, coro, hq, motor)
+        }
+
+        /** El modelo a veces confunde cuál es la principal: intercambia los nombres de las dos pistas de voz. */
+        @JavascriptInterface fun swapVoices(id: String): String {
+            val m = Songs.meta(this@MainActivity, id) ?: return "null"
+            val st = m.optJSONArray("stems") ?: return m.toString()
+            var a = -1; var b = -1
+            for (i in 0 until st.length()) {
+                when (st.getJSONObject(i).optString("file")) { "principal.wav" -> a = i; "coro.wav" -> b = i }
+            }
+            if (a >= 0 && b >= 0) {
+                val la = st.getJSONObject(a).getString("label")
+                st.getJSONObject(a).put("label", st.getJSONObject(b).getString("label"))
+                st.getJSONObject(b).put("label", la)
+                // la "principal" queda primero
+                val first = st.getJSONObject(a); val second = st.getJSONObject(b)
+                st.put(a, second); st.put(b, first)
+                m.put("swapped", !m.optBoolean("swapped"))
+                Songs.save(this@MainActivity, m)
+            }
+            return m.toString()
         }
 
         @JavascriptInterface fun cancel() { SeparationService.cancel = true }

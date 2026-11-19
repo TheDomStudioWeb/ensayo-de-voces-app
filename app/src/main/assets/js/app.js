@@ -5,6 +5,13 @@
   const J = (s) => { try { return JSON.parse(s); } catch (e) { return null; } };
 
   let view = 'lib', current = null, mode = 'voces', hq = true, poll = null;
+  let motor = 'xnnpack';
+  try { motor = localStorage.getItem('motor') || 'xnnpack'; hq = localStorage.getItem('hq') !== '0'; } catch (e) {}
+  const MOTOR = { xnnpack: 'Acelerado', nnapi: 'Chip de IA', cpu: 'Básico' };
+  const MNOTE = {
+    xnnpack: 'Usa el procesador con instrucciones aceleradas. Recomendado.',
+    nnapi: 'Prueba usar el chip gráfico / de IA del teléfono. Puede ser mucho más rápido o no andar en algunos teléfonos (si falla, usa Básico).',
+    cpu: 'El más compatible y el más lento.' };
 
   function show(v) {
     view = v;
@@ -31,6 +38,7 @@
       const parts = [];
       if (s.seconds) parts.push(fmt(s.seconds));
       if (state === 'lista') parts.push(s.coro ? 'principal · coros · música' : 'voces · música');
+      if (state === 'lista' && s.procSeconds) parts.push('separada en ' + fmt(s.procSeconds) + (s.motor ? ' (' + (MOTOR[s.motor] || s.motor) + (s.hq ? ', calidad alta' : '') + ')' : ''));
       if (state === 'procesando' && st.total != null) parts.push(Math.round(st.total * 100) + '%');
       return `<button class="card" data-id="${s.id}"><div class="info"><div class="name">${esc(s.name)}</div>
         <div class="meta">${parts.join(' · ') || '&nbsp;'}</div></div><span class="badge ${state}">${STATE[state]}</span></button>`;
@@ -69,6 +77,8 @@
   function paintOpts() {
     document.querySelectorAll('.opt').forEach((b) => b.classList.toggle('on', b.dataset.mode === mode));
     $('#hq').classList.toggle('on', hq);
+    document.querySelectorAll('#motor button').forEach((b) => b.classList.toggle('on', b.dataset.m === motor));
+    $('#m-note').textContent = MNOTE[motor];
     const m = J(A.models()) || {};
     const need = [];
     if (!m.voces) need.push('65 MB');
@@ -78,8 +88,10 @@
     $('#o-note').textContent = note;
   }
   document.querySelectorAll('.opt').forEach((b) => b.onclick = () => { mode = b.dataset.mode; paintOpts(); });
-  $('#hq').onclick = () => { hq = !hq; paintOpts(); };
-  $('#go').onclick = () => { A.separate(current.id, mode === 'coro', hq); showProc(); };
+  $('#hq').onclick = () => { hq = !hq; try { localStorage.setItem('hq', hq ? '1' : '0'); } catch (e) {} paintOpts(); };
+  document.querySelectorAll('#motor button').forEach((b) => b.onclick = () => {
+    motor = b.dataset.m; try { localStorage.setItem('motor', motor); } catch (e) {} paintOpts(); });
+  $('#go').onclick = () => { A.separate(current.id, mode === 'coro', hq, motor); showProc(); };
   $('#del').onclick = () => {
     if (!confirm('¿Borrar "' + current.name + '" y sus pistas?')) return;
     A.delete(current.id); current = null; renderLib(); show('lib');
@@ -121,6 +133,7 @@
     stopAll(); offset = 0; loopA = loopB = null; paintLoop();
     $('#y-name').textContent = current.name;
     $('#tracks').innerHTML = ''; $('#transport').classList.add('hidden');
+    $('#swap').classList.toggle('hidden', !current.coro);
     $('#y-loading').classList.remove('hidden'); $('#y-loading').textContent = 'Cargando pistas…';
     show('play');
     if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
@@ -220,6 +233,20 @@
   $('#loopX').onclick = () => { loopA = loopB = null; paintLoop(); };
 
   $('#redo').onclick = () => { stopAll(); showOpts(); };
+  // Intercambia los nombres sin volver a cargar el audio
+  $('#swap').onclick = () => {
+    const m = J(A.swapVoices(current.id)); if (!m || !m.stems) return;
+    const files = (current.stems || []).map((s) => s.file);
+    current = m;
+    const order = m.stems.map((s) => files.indexOf(s.file));
+    buffers = order.map((i) => buffers[i]); gains = order.map((i) => gains[i]); state = order.map((i) => state[i]);
+    if (playing) { const p = pos(); startAll(p); }
+    $('#tracks').innerHTML = m.stems.map((s, i) => `<div class="track on" data-i="${i}"><div class="row">
+      <button class="tog on" data-tog="${i}"></button><span class="lbl">${esc(s.label)}</span>
+      <button class="solo" data-solo="${i}">SOLO</button></div>
+      <input type="range" min="0" max="100" value="${Math.round(state[i].vol * 100)}" data-vol="${i}"></div>`).join('');
+    applyGains();
+  };
 
   // ---------- Navegación ----------
   function back() {
@@ -237,7 +264,7 @@
     const songs = [{ id: 'a', name: 'Canción de prueba', created: 1, state: 'nueva' }];
     return {
       songs: () => JSON.stringify(songs), song: (id) => JSON.stringify(songs.find((s) => s.id === id) || null),
-      status: () => '{"running":false}', models: () => '{"voces":false,"coro":false}',
+      status: () => '{"running":false}', models: () => '{"voces":false,"coro":false}', swapVoices: () => 'null',
       pick() {}, separate() {}, cancel() {}, delete() {}, rename() {},
     };
   }

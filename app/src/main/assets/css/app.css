@@ -85,3 +85,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 
 footer { text-align: center; color: #7d786d; font-size: 11px; padding: 14px 16px 18px; border-top: 1px solid rgba(212, 175, 55, .15); line-height: 1.5; }
 footer b { color: var(--bronze); font-weight: 600; }
+
+.seg { display: flex; gap: 6px; margin-top: 10px; }
+.seg button { flex: 1; padding: 11px 4px; border: 1px solid #2A2D33; border-radius: 4px; font-size: 14px; font-weight: 600; color: var(--muted); }
+.seg button.on { border-color: var(--gold); color: var(--gold2); background: rgba(212, 175, 55, .07); }
