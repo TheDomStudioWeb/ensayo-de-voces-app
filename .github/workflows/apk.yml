@@ -3,7 +3,7 @@ name: APK Ensayo de Voces
 on:
   push:
     branches: [main]
-    paths-ignore: ["**.md"]
+    paths-ignore: ["**.md", "tools/**", ".github/workflows/modelo-fm.yml"]
   workflow_dispatch:
 
 permissions:

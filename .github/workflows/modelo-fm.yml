@@ -1,0 +1,39 @@
+name: Modelo voz femenina / masculina
+
+# Convierte el modelo abierto BS-RoFormer (aufr33) a ONNX y lo publica en Releases (etiqueta "modelos").
+# La app lo baja de ahí la primera vez que se usa la separación femenina / masculina.
+on:
+  push:
+    branches: [main]
+    paths: ["tools/export_fm.py", ".github/workflows/modelo-fm.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  convertir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar herramientas
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install audio-separator onnx onnxruntime pyyaml
+      - name: Bajar el modelo original
+        run: audio-separator --download_model_only -m bs_roformer_male_female_by_aufr33_sdr_7.2889.ckpt --model_file_dir modelos
+      - name: Convertir a ONNX
+        run: |
+          ls -la modelos
+          python tools/export_fm.py modelos bs_roformer_femenina_masculina_fp16.onnx
+      - name: Publicar
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: modelos
+          name: Modelos de separación
+          make_latest: false
+          files: bs_roformer_femenina_masculina_fp16.onnx
+          body: Modelos que Ensayo de Voces baja la primera vez que se usan. BS-RoFormer voz masculina / femenina (por aufr33), convertido a ONNX con pesos en 16 bits.
