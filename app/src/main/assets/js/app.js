@@ -21,6 +21,7 @@
 
   const fmt = (s) => { s = Math.max(0, Math.round(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
   const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const modoDe = (s) => s.modo || (s.coro ? 'coro' : 'voces');
   const STATE = { lista: 'Lista', nueva: 'Sin separar', procesando: 'Separando', error: 'Error' };
 
   // ---------- Biblioteca ----------
@@ -37,7 +38,7 @@
       if (state === 'procesando' && !(st.running && st.id === s.id)) state = 'error';
       const parts = [];
       if (s.seconds) parts.push(fmt(s.seconds));
-      if (state === 'lista') parts.push(s.coro ? 'principal · coros · música' : 'voces · música');
+      if (state === 'lista') parts.push({ coro: 'principal · coros · música', fm: 'femenina · masculina · música' }[modoDe(s)] || 'voces · música');
       if (s.received) parts.push('recibida');
       if (state === 'lista' && s.procSeconds) parts.push('separada en ' + fmt(s.procSeconds) + (s.motor ? ' (' + (MOTOR[s.motor] || s.motor) + (s.hq ? ', calidad alta' : '') + ')' : ''));
       if (state === 'procesando' && st.total != null) parts.push(Math.round(st.total * 100) + '%');
@@ -71,7 +72,7 @@
   // ---------- Opciones ----------
   function showOpts() {
     $('#o-name').textContent = current.name;
-    if (current.coro != null) mode = current.coro ? 'coro' : 'voces';
+    if (current.modo || current.coro != null) mode = modoDe(current);
     paintOpts();
     show('opts');
   }
@@ -84,6 +85,7 @@
     const need = [];
     if (!m.voces) need.push('65 MB');
     if (mode === 'coro' && !m.coro) need.push('50 MB');
+    if (mode === 'fm' && !m.fm) need.push('270 MB');
     let note = need.length ? `La primera vez baja el motor (${need.join(' + ')}). Conviene estar con Wi-Fi. ` : '';
     if (current.error && current.state !== 'lista') note += 'Último intento: ' + current.error;
     $('#o-note').textContent = note;
@@ -92,7 +94,7 @@
   $('#hq').onclick = () => { hq = !hq; try { localStorage.setItem('hq', hq ? '1' : '0'); } catch (e) {} paintOpts(); };
   document.querySelectorAll('#motor button').forEach((b) => b.onclick = () => {
     motor = b.dataset.m; try { localStorage.setItem('motor', motor); } catch (e) {} paintOpts(); });
-  $('#go').onclick = () => { A.separate(current.id, mode === 'coro', hq, motor); showProc(); };
+  $('#go').onclick = () => { A.separate(current.id, mode, hq, motor); showProc(); };
   function delSong() {
     if (!confirm('¿Borrar "' + current.name + '" y sus pistas?')) return;
     if (view === 'play') { stopAll(); buffers = []; }
@@ -137,7 +139,9 @@
     stopAll(); offset = 0; loopA = loopB = null; paintLoop();
     $('#y-name').textContent = current.name;
     $('#tracks').innerHTML = ''; $('#transport').classList.add('hidden');
-    $('#swap').classList.toggle('hidden', !current.coro);
+    const md = modoDe(current);
+    $('#swap').classList.toggle('hidden', md === 'voces');
+    $('#swapTxt').textContent = md === 'fm' ? '⇅ Intercambiar voz femenina y masculina' : '⇅ Intercambiar voz principal y coros';
     $('#redo').classList.toggle('hidden', !!current.received);
     $('#share').textContent = 'Mandar paquete de ensayo (WhatsApp)';
     $('#y-loading').classList.remove('hidden'); $('#y-loading').textContent = 'Cargando pistas…';
@@ -277,7 +281,7 @@
     const songs = [{ id: 'a', name: 'Canción de prueba', created: 1, state: 'nueva' }];
     return {
       songs: () => JSON.stringify(songs), song: (id) => JSON.stringify(songs.find((s) => s.id === id) || null),
-      status: () => '{"running":false}', models: () => '{"voces":false,"coro":false}', swapVoices: () => 'null',
+      status: () => '{"running":false}', models: () => '{"voces":false,"coro":false,"fm":false}', swapVoices: () => 'null',
       pick() {}, share() {}, separate() {}, cancel() {}, delete() {}, rename() {},
     };
   }

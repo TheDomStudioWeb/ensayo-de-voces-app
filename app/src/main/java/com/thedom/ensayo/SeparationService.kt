@@ -24,11 +24,13 @@ import java.nio.FloatBuffer
  * Modelo ONNX corriendo en el teléfono. motor: "xnnpack" (procesador acelerado),
  * "nnapi" (chip gráfico / de IA, en 16 bits) o "cpu". Si el motor elegido falla, cae a "cpu".
  */
-class OrtModel(path: String, dimF: Int, wanted: String) : Engine.Model, AutoCloseable {
+class OrtModel(path: String, private val shape: LongArray, wanted: String, lowMemory: Boolean = false) : Engine.Model, AutoCloseable {
+    constructor(path: String, dimF: Int, wanted: String) :
+        this(path, longArrayOf(1, 4, dimF.toLong(), Engine.DIM_T.toLong()), wanted)
+
     private val env = OrtEnvironment.getEnvironment()
     private val session: OrtSession
     private val inputName: String
-    private val shape = longArrayOf(1, 4, dimF.toLong(), Engine.DIM_T.toLong())
     var motor = wanted
         private set
 
@@ -36,8 +38,10 @@ class OrtModel(path: String, dimF: Int, wanted: String) : Engine.Model, AutoClos
         val cores = Runtime.getRuntime().availableProcessors().coerceIn(2, 8)
         fun opts(m: String) = OrtSession.SessionOptions().apply {
             setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT)
+            if (lowMemory) { setMemoryPatternOptimization(false); setCPUArenaAllocator(false) }
             when (m) {
-                "xnnpack" -> { setIntraOpNumThreads(1); addXnnpack(mapOf("intra_op_num_threads" to cores.toString())) }
+                // los nodos que XNNPACK no toma siguen en el procesador común: que también usen todos los núcleos
+                "xnnpack" -> { setIntraOpNumThreads(cores); addXnnpack(mapOf("intra_op_num_threads" to cores.toString())) }
                 "nnapi" -> { setIntraOpNumThreads(cores); addNnapi(java.util.EnumSet.of(ai.onnxruntime.providers.NNAPIFlags.USE_FP16)) }
                 else -> setIntraOpNumThreads(cores)
             }
@@ -71,9 +75,10 @@ class SeparationService : Service() {
         private const val CH = "proceso"
         private const val NID = 7
 
-        fun start(ctx: Context, id: String, coro: Boolean, hq: Boolean, motor: String) {
+        /** modo: "voces", "coro" (principal / coros) o "fm" (voz femenina / masculina) */
+        fun start(ctx: Context, id: String, modo: String, hq: Boolean, motor: String) {
             val i = Intent(ctx, SeparationService::class.java)
-                .putExtra("id", id).putExtra("coro", coro).putExtra("hq", hq).putExtra("motor", motor)
+                .putExtra("id", id).putExtra("modo", modo).putExtra("hq", hq).putExtra("motor", motor)
             if (Build.VERSION.SDK_INT >= 26) ctx.startForegroundService(i) else ctx.startService(i)
         }
     }
@@ -87,11 +92,11 @@ class SeparationService : Service() {
         val id = intent?.getStringExtra("id")
         startAsForeground(notification("Preparando…", 0))
         if (id == null || worker?.isAlive == true) return START_NOT_STICKY
-        val coro = intent.getBooleanExtra("coro", false)
+        val modo = intent.getStringExtra("modo") ?: "voces"
         val hq = intent.getBooleanExtra("hq", true)
         val motor = intent.getStringExtra("motor") ?: "xnnpack"
         cancel = false
-        worker = Thread({ work(id, coro, hq, motor) }, "separacion").apply { start() }
+        worker = Thread({ work(id, modo, hq, motor) }, "separacion").apply { start() }
         return START_NOT_STICKY
     }
 
@@ -100,7 +105,9 @@ class SeparationService : Service() {
         else startForeground(NID, n)
     }
 
-    private fun work(id: String, coro: Boolean, hq: Boolean, wanted: String) {
+    private fun work(id: String, modo: String, hq: Boolean, wanted: String) {
+        val coro = modo == "coro"
+        val fm = modo == "fm"
         val wl = (getSystemService(Context.POWER_SERVICE) as PowerManager)
             .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "ensayo:separar")
         wl.acquire(3 * 60 * 60 * 1000L)
@@ -108,15 +115,15 @@ class SeparationService : Service() {
         val meta = Songs.meta(this, id) ?: JSONObject().put("id", id)
         val dir = Songs.dir(this, id)
         try {
-            meta.put("state", "procesando").put("coro", coro).put("hq", hq).put("motor", wanted).remove("error")
+            meta.put("state", "procesando").put("modo", modo).put("coro", coro).put("hq", hq).put("motor", wanted).remove("error")
             Songs.save(this, meta)
 
             // Pesos de cada etapa en la barra total
             val wDecode = 0.04f
-            val wVoces = if (coro) 0.60f else 0.96f
-            val wKara = if (coro) 0.36f else 0f
+            val wVoces = when { coro -> 0.60f; fm -> 0.16f; else -> 0.96f }
+            val wKara = when { coro -> 0.36f; fm -> 0.80f; else -> 0f }
 
-            for (spec in listOfNotNull(Models.VOCES, if (coro) Models.KARAOKE else null)) {
+            for (spec in listOfNotNull(Models.VOCES, if (coro) Models.KARAOKE else null, if (fm) Models.FM else null)) {
                 if (!Models.ready(this, spec)) {
                     Models.download(this, spec,
                         { p -> report(id, "Bajando el modelo de ${spec.label} (solo la primera vez)", p, null, t0) },
@@ -164,6 +171,19 @@ class SeparationService : Service() {
                 }
                 stems.put(JSONObject().put("file", "principal.wav").put("label", "Voz principal"))
                 stems.put(JSONObject().put("file", "coro.wav").put("label", "Coros"))
+            } else if (fm) {
+                val v = Engine.readWav(File(dir, "voces.wav"))
+                val shape = longArrayOf(1, RoformerEngine.FRAMES.toLong(), RoformerEngine.FEAT.toLong())
+                OrtModel(Models.file(this, Models.FM).absolutePath, shape, wanted, lowMemory = true).use { m ->
+                    Engine.WavWriter(File(dir, "masculina.wav")).use { a ->
+                        Engine.WavWriter(File(dir, "femenina.wav")).use { b ->
+                            RoformerEngine.separate(m, v[0], v[1], v[0].size, a, b,
+                                pg("Separando voz femenina y masculina (la parte larga)", wDecode + wVoces, wKara))
+                        }
+                    }
+                }
+                stems.put(JSONObject().put("file", "femenina.wav").put("label", "Voz femenina"))
+                stems.put(JSONObject().put("file", "masculina.wav").put("label", "Voz masculina"))
             } else {
                 stems.put(JSONObject().put("file", "voces.wav").put("label", "Voces"))
             }

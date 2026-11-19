@@ -36,12 +36,15 @@ object Songs {
 
 /** Modelos abiertos de separación (UVR / MDX-Net, formato ONNX). Se bajan una sola vez. */
 object Models {
-    class Spec(val file: String, val nFft: Int, val dimF: Int, val label: String) {
-        val url get() = "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/$file"
+    class Spec(val file: String, val nFft: Int, val dimF: Int, val label: String, private val fixedUrl: String? = null) {
+        val url get() = fixedUrl ?: "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/$file"
     }
 
     val VOCES = Spec("Kim_Vocal_2.onnx", 7680, 3072, "voces y música")
     val KARAOKE = Spec("UVR_MDXNET_KARA_2.onnx", 5120, 2048, "voz principal y coros")
+    /** BS-RoFormer voz masculina / femenina (aufr33), convertido por tools/export_fm.py */
+    val FM = Spec("bs_roformer_femenina_masculina_fp16.onnx", 0, 0, "voz femenina y masculina",
+        "https://github.com/TheDomStudioWeb/ensayo-de-voces-app/releases/download/modelos/bs_roformer_femenina_masculina_fp16.onnx")
 
     fun file(ctx: Context, s: Spec) = File(File(ctx.filesDir, "models").apply { mkdirs() }, s.file)
     fun ready(ctx: Context, s: Spec) = file(ctx, s).let { it.exists() && it.length() > 1_000_000 }

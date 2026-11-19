@@ -44,7 +44,7 @@ object Paquete {
             }
             val info = JSONObject().put("app", "ensayo-de-voces").put("version", 1)
                 .put("name", meta.optString("name")).put("seconds", meta.optInt("seconds"))
-                .put("coro", meta.optBoolean("coro")).put("stems", pkStems)
+                .put("coro", meta.optBoolean("coro")).put("modo", meta.optString("modo", if (meta.optBoolean("coro")) "coro" else "voces")).put("stems", pkStems)
             zip.putNextEntry(ZipEntry("ensayo.json"))
             zip.write(info.toString().toByteArray())
             zip.closeEntry()
@@ -80,7 +80,7 @@ object Paquete {
             }
             val meta = JSONObject().put("id", id).put("name", inf.optString("name", "Canción"))
                 .put("created", System.currentTimeMillis()).put("state", "lista").put("received", true)
-                .put("seconds", inf.optInt("seconds")).put("coro", inf.optBoolean("coro")).put("stems", stems)
+                .put("seconds", inf.optInt("seconds")).put("coro", inf.optBoolean("coro")).put("modo", inf.optString("modo", if (inf.optBoolean("coro")) "coro" else "voces")).put("stems", stems)
             Songs.save(ctx, meta)
             return meta
         } catch (e: Exception) {

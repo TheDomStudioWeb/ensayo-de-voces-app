@@ -16,6 +16,7 @@ Ensayo de Voces es una app para el teléfono que toma cualquier canción y la se
 2. **Elegir qué separar**:
    - «Voces y música»: dos pistas.
    - «Voz principal, coros y música»: tres pistas; tarda más.
+   - «Voz femenina, voz masculina y música»: para dúos de hombre y mujer. Es la más lenta (puede pasar la media hora); se deja separando en segundo plano. Si las voces salen cambiadas, el botón «⇅ Intercambiar» del reproductor lo corrige.
    - «Calidad alta»: más limpio, tarda el doble. Se puede apagar para ir más rápido.
    - «Motor»: Acelerado (recomendado), Chip de IA (prueba el chip gráfico del teléfono; puede ser más rápido o no andar) o Básico (el más lento). Si el elegido falla, la app usa Básico sola. En la lista se ve cuánto tardó cada canción y con qué motor, para comparar.
 3. **Separar**: muestra la etapa, el porcentaje y cuánto falta. Se puede salir de la app o apagar la pantalla; cuando termina llega una notificación.
@@ -33,20 +34,21 @@ Las canciones recibidas no se pueden volver a separar (no traen el audio origina
 El botón «Borrar canción» está en la pantalla de opciones (antes de separar) y abajo de todo en el reproductor. Borra la canción y todas sus pistas.
 
 ## La primera vez
-La primera separación baja el "motor" (modelo de inteligencia artificial): unos 65 MB para voces y música, y otros 50 MB si se pide separar los coros. Conviene estar con Wi-Fi. Después ya no hace falta internet.
+La primera separación baja el "motor" (modelo de inteligencia artificial): unos 65 MB para voces y música, otros 50 MB si se pide separar los coros y unos 270 MB para separar voz femenina y masculina. Conviene estar con Wi-Fi. Después ya no hace falta internet.
 
 ## Cuánto tarda
 Depende del largo de la canción y de la calidad elegida. Mientras procesa, la app muestra cuánto falta. En el Motorola Razr 60 Ultra se espera que tarde unos minutos por canción (menos que la duración del tema con calidad normal; más con calidad alta y coros). Es más lento que Moises porque Moises procesa en sus servidores; a cambio, acá no hay límites.
 
 ## Límites conocidos
-- Separa la voz principal de los coros, pero no separa entre sí dos voces principales que cantan a la vez (por ejemplo, dos hombres a dúo). Voz masculina y femenina por separado: en estudio (fase siguiente).
+- Separa la voz principal de los coros y la voz femenina de la masculina, pero no separa entre sí dos voces del mismo tipo que cantan a la vez (por ejemplo, dos hombres a dúo).
+- La separación femenina / masculina usa mucha memoria (unos 4 GB mientras trabaja): pensada para teléfonos potentes como el Razr 60 Ultra.
 - Si una voz principal hace coros en algunas partes, esa parte puede quedar en "Coros".
 - Si la línea principal la canta un grupo (murga, coro), el motor puede tomarla como coros: usar «Intercambiar».
 - Velocidad medida en el Razr 60 Ultra: «Amor» (5:22) tardó casi 40 minutos con calidad alta y motor básico (primera versión).
 - La separación nunca es perfecta: puede quedar algo de eco de la música en las voces.
 
 ## Datos técnicos (para soporte)
-- Motor: modelos abiertos MDX-Net de Ultimate Vocal Remover en formato ONNX: «Kim Vocal 2» (voces/música) y «UVR MDXNET KARA 2» (principal/coros). Corren con ONNX Runtime en el procesador del teléfono.
+- Motor: modelos abiertos MDX-Net de Ultimate Vocal Remover en formato ONNX: «Kim Vocal 2» (voces/música) y «UVR MDXNET KARA 2» (principal/coros); para femenina/masculina, el BS-RoFormer de aufr33 convertido a ONNX por el repositorio mismo (tools/export_fm.py, publicado en Releases con la etiqueta «modelos»). Corren con ONNX Runtime en el procesador del teléfono.
 - Las pistas se guardan dentro de la app (WAV 44,1 kHz). Borrar la canción borra sus pistas.
 - Repositorio: github.com/TheDomStudioWeb/ensayo-de-voces-app. Cada cambio en la rama main compila la APK sola y la publica en Releases («EnsayoDeVoces.apk»); se instala encima de la anterior sin perder las canciones.
 
@@ -54,4 +56,4 @@ Depende del largo de la canción y de la calidad elegida. Mientras procesa, la a
 1. ~~Voces y música en el teléfono~~ (hecho)
 2. ~~Voz principal y coros~~ (incluido, a probar)
 3. Letra sincronizada (transcripción automática).
-4. ~~Modo Belén: recibir por WhatsApp un paquete ya separado y solo reproducirlo~~ (hecho). Pendiente: guía de notas; voz femenina / masculina por separado.
+4. ~~Modo Belén: recibir por WhatsApp un paquete ya separado y solo reproducirlo~~ (hecho). ~~Voz femenina / masculina~~ (hecho). Pendiente: guía de notas.

@@ -23,6 +23,7 @@
       <b>¿Qué querés separar?</b>
       <button class="opt on" data-mode="voces"><i class="dot"></i><div><b>Voces y música</b><span>Dos pistas: todas las voces juntas y la música sola.</span></div></button>
       <button class="opt" data-mode="coro"><i class="dot"></i><div><b>Voz principal, coros y música</b><span>Tres pistas. Tarda más: separa primero las voces y después la principal de los coros.</span></div></button>
+      <button class="opt" data-mode="fm"><i class="dot"></i><div><b>Voz femenina, voz masculina y música</b><span>Para dúos de hombre y mujer. Es la más lenta (puede llevar más de media hora): conviene dejarla separando en segundo plano.</span></div></button>
       <div class="switch"><div class="txt"><b>Calidad alta</b><span>Hace dos pasadas y promedia: más limpio, tarda el doble.</span></div><button class="tog on" id="hq"></button></div>
       <div style="margin-top:18px"><b>Motor</b></div>
       <div class="seg" id="motor">
@@ -67,7 +68,7 @@
       </div>
     </div>
     <button class="btn gold" id="share" style="margin-top:14px">Mandar paquete de ensayo (WhatsApp)</button>
-    <button class="btn line hidden" id="swap" style="margin-top:10px">⇅ Intercambiar voz principal y coros</button>
+    <button class="btn line hidden" id="swap" style="margin-top:10px"><span id="swapTxt">⇅ Intercambiar voz principal y coros</span></button>
     <button class="btn line" id="redo" style="margin-top:10px">Volver a separar</button>
     <button class="btn danger" id="del2" style="margin-top:10px">Borrar canción</button>
   </section>
