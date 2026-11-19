@@ -1,0 +1,11 @@
+[versions]
+agp = "9.4.1"
+webkit = "1.12.1"
+onnxruntime = "1.22.0"
+
+[libraries]
+androidx-webkit = { group = "androidx.webkit", name = "webkit", version.ref = "webkit" }
+onnxruntime-android = { group = "com.microsoft.onnxruntime", name = "onnxruntime-android", version.ref = "onnxruntime" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }

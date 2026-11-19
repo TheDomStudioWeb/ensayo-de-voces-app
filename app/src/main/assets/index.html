@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ensayo de Voces</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<main>
+  <!-- Biblioteca -->
+  <section id="v-lib">
+    <h1>Ensayo de Voces</h1>
+    <p class="sub">Separá cualquier canción y ensayá tu parte.</p>
+    <button class="btn gold" id="add">＋ Agregar canción</button>
+    <div class="list" id="list"></div>
+  </section>
+
+  <!-- Opciones de separación -->
+  <section id="v-opts" class="hidden">
+    <div class="top"><button class="back" data-back>‹</button><h2 id="o-name"></h2></div>
+    <div class="panel">
+      <b>¿Qué querés separar?</b>
+      <button class="opt on" data-mode="voces"><i class="dot"></i><div><b>Voces y música</b><span>Dos pistas: todas las voces juntas y la música sola.</span></div></button>
+      <button class="opt" data-mode="coro"><i class="dot"></i><div><b>Voz principal, coros y música</b><span>Tres pistas. Tarda más: separa primero las voces y después la principal de los coros.</span></div></button>
+      <div class="switch"><div class="txt"><b>Calidad alta</b><span>Hace dos pasadas y promedia: más limpio, tarda el doble.</span></div><button class="tog on" id="hq"></button></div>
+      <p class="note" id="o-note"></p>
+      <button class="btn gold" id="go">Separar</button>
+    </div>
+    <button class="btn danger" id="del" style="margin-top:14px">Borrar canción</button>
+  </section>
+
+  <!-- Procesando -->
+  <section id="v-proc" class="hidden">
+    <div class="top"><button class="back" data-back>‹</button><h2 id="p-name"></h2></div>
+    <div class="panel">
+      <div class="stage" id="p-stage">Preparando…</div>
+      <div class="bar"><i id="p-bar"></i></div>
+      <div class="times"><span id="p-el"></span><span id="p-eta"></span></div>
+      <p class="note">Podés salir de la app o apagar la pantalla: sigue separando y te avisa con una notificación cuando termina.</p>
+      <button class="btn line" id="cancel">Cancelar</button>
+    </div>
+  </section>
+
+  <!-- Reproductor -->
+  <section id="v-play" class="hidden">
+    <div class="top"><button class="back" data-back>‹</button><h2 id="y-name"></h2></div>
+    <div class="loading" id="y-loading">Cargando pistas…</div>
+    <div class="tracks" id="tracks"></div>
+    <div class="transport hidden" id="transport">
+      <input type="range" id="seek" min="0" max="1000" value="0">
+      <div class="pos"><span id="cur">0:00</span><span id="dur">0:00</span></div>
+      <div class="ctrl">
+        <button id="rw">−10</button>
+        <button class="play" id="play">▶</button>
+        <button id="ff">+10</button>
+      </div>
+      <div class="ctrl" style="margin-top:12px">
+        <button class="loop" id="loopA" title="Marcar inicio">A</button>
+        <button class="loop" id="loopB" title="Marcar fin">B</button>
+        <button class="loop" id="loopX" title="Quitar repetición">✕</button>
+      </div>
+    </div>
+    <button class="btn line" id="redo" style="margin-top:14px">Volver a separar</button>
+  </section>
+</main>
+<footer>Desarrollado por <b>The DOM Studio Web</b><br>WhatsApp 261-3431216 · thedomstudioweb@gmail.com</footer>
+<script src="js/app.js"></script>
+</body>
+</html>
