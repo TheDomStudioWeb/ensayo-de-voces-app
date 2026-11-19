@@ -22,7 +22,7 @@ jobs:
       - name: Instalar herramientas
         run: |
           pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install audio-separator onnx onnxruntime pyyaml
+          pip install audio-separator audioread onnx onnxruntime pyyaml
       - name: Bajar el modelo original
         run: audio-separator --download_model_only -m bs_roformer_male_female_by_aufr33_sdr_7.2889.ckpt --model_file_dir modelos
       - name: Convertir a ONNX
